@@ -1,9 +1,6 @@
 package com.cff.juc.thread;
 
-import com.alibaba.fastjson.JSONObject;
-import org.junit.jupiter.api.Test;
 
-import java.util.Random;
 import java.util.concurrent.*;
 
 /**
@@ -184,7 +181,6 @@ public class Doc {
     /**
      * 8、通过submit方法向ThreadPoolExecutor提交任务后，当所有的任务都执行完后不调用shutdown或shutdownNow方法会有问题吗？
      */
-    @Test
     public void test8() {
         /**
          * 如果没指核心线程允许超时将会有问题。
@@ -229,25 +225,25 @@ public class Doc {
      * 3. shutdown和shutdownNow的使用--->关联问题7
      */
 
-    public static void main(String[] args) throws Exception{
-        BlockingQueue queue = new LinkedBlockingQueue(100);
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(5, 100,
-                3, TimeUnit.SECONDS, queue);
-
-
-        for(int i=0;i<200;i++){
-            executor.execute( new Runnable() {
-                public void run() {
-                    try {
-                        System.out.println("存活："+executor.getActiveCount());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    System. out.println(String. format("thread %d finished", this.hashCode())+"---"+executor.getActiveCount());
-                }
-            });
-        }
-    }
+    //public static void main(String[] args) throws Exception{
+    //    BlockingQueue queue = new LinkedBlockingQueue(100);
+    //    ThreadPoolExecutor executor = new ThreadPoolExecutor(5, 100,
+    //            3, TimeUnit.SECONDS, queue);
+    //
+    //
+    //    for(int i=0;i<200;i++){
+    //        executor.execute( new Runnable() {
+    //            public void run() {
+    //                try {
+    //                    System.out.println("存活："+executor.getActiveCount());
+    //                } catch (Exception e) {
+    //                    e.printStackTrace();
+    //                }
+    //                System. out.println(String. format("thread %d finished", this.hashCode())+"---"+executor.getActiveCount());
+    //            }
+    //        });
+    //    }
+    //}
 
     public static void method1() {
         BlockingQueue queue = new LinkedBlockingQueue(100);
@@ -269,31 +265,29 @@ public class Doc {
                 }
             });
         }
-        System.out.println(JSONObject.toJSONString(executor.shutdownNow()));
-
     }
 
-    public static void main(String[] args) throws Exception{
-        ExecutorService pool = Executors.newFixedThreadPool(2);
-        pool.execute(new RunnableTest("Task1"));
-
-        Future future = pool.submit(new CallBackTest("Task2"));
-
-        System.out.println("==========");
-
-        try {
-            if (future.get() == null) {
-                //如果Future's get返回null，任务完成
-                System.out.println("任务完成");
-            }
-        }catch (Exception e) {
-            //否则我们可以看看任务失败的原因是什么
-            System.out.println("submit:"+e.getCause().getMessage());
-        }
-
-
-        System.exit(0);
-    }
+    //public static void main(String[] args) throws Exception{
+    //    ExecutorService pool = Executors.newFixedThreadPool(2);
+    //    pool.execute(new RunnableTest("Task1"));
+    //
+    //    Future future = pool.submit(new CallBackTest("Task2"));
+    //
+    //    System.out.println("==========");
+    //
+    //    try {
+    //        if (future.get() == null) {
+    //            //如果Future's get返回null，任务完成
+    //            System.out.println("任务完成");
+    //        }
+    //    }catch (Exception e) {
+    //        //否则我们可以看看任务失败的原因是什么
+    //        System.out.println("submit:"+e.getCause().getMessage());
+    //    }
+    //
+    //
+    //    System.exit(0);
+    //}
 
 }
 

@@ -273,27 +273,27 @@ public class Doc {
 
     }
 
-    //public static void main(String[] args) throws Exception{
-    //    ExecutorService pool = Executors.newFixedThreadPool(2);
-    //    pool.execute(new RunnableTest("Task1"));
-    //
-    //    Future future = pool.submit(new CallBackTest("Task2"));
-    //
-    //    System.out.println("==========");
-    //
-    //    try {
-    //        if (future.get() == null) {
-    //            //如果Future's get返回null，任务完成
-    //            System.out.println("任务完成");
-    //        }
-    //    }catch (Exception e) {
-    //        //否则我们可以看看任务失败的原因是什么
-    //        System.out.println("submit:"+e.getCause().getMessage());
-    //    }
-    //
-    //
-    //    //System.exit(0);
-    //}
+    public static void main(String[] args) throws Exception{
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        pool.execute(new RunnableTest("Task1"));
+
+        Future future = pool.submit(new CallBackTest("Task2"));
+
+        System.out.println("==========");
+
+        try {
+            if (future.get() == null) {
+                //如果Future's get返回null，任务完成
+                System.out.println("任务完成");
+            }
+        }catch (Exception e) {
+            //否则我们可以看看任务失败的原因是什么
+            System.out.println("submit:"+e.getCause().getMessage());
+        }
+
+
+        System.exit(0);
+    }
 
 }
 

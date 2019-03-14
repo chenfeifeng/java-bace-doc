@@ -13,7 +13,6 @@
 10. executor.getLargestPoolSize() 获取线程池最大线程的数量
 
 
-
 ## ThreadPoolExecutor 基本工作原理
 1. 初始化线程池，如果线程数没有达到coreSize，那么就会新建一个线程，并绑定该任务，直到数量到达coreSize前都不会重用之前的线程
 2. 线程数量大于coreSize，提交的任务都会放到一个等待队列（Workqueue）中进行等待，线程池中的线程会使用 take()阻塞的从等待队列拿任务
@@ -50,6 +49,37 @@
 3. 当线程池内有效线程数量 > corePoolSize,workqueue已满，则会进行临时建线程执行。
 
 
+## ThreadPoolExecutor状态
+### 状态说明
+1. RUNING:线程池处在RUNNING状态时，能够接收新任务，以及对已添加的任务进行处理
+2. SHUTDOWN:线程池处在SHUTDOWN状态时，不接收新任务，但能处理已添加的任务
+3. STOP:线程池处在STOP状态时，不接收新任务，不处理已添加的任务，并且会中断正在处理的任务
+4. TIDYING:当所有的任务已终止，ctl记录的"任务数量"为0，线程池会变为TIDYING状态。
+当线程池变为TIDYING状态时，会执行钩子函数terminated()。
+terminated()在ThreadPoolExecutor类中是空的，若用户想在线程池变为TIDYING时，进行相应的处理；可以通过重载terminated()函数来实现
+5. TERMINATED:线程池彻底终止，就变成TERMINATED状态。
+
+### 状态切换
+1. RUNING:线程池的初始化状态是RUNNING。换句话说，线程池被一旦被创建，就处于RUNNING状态！
+2. SHUTDOWN:调用线程池的shutdown()接口时，线程池由RUNNING -> SHUTDOWN。
+3. STOP:调用线程池的shutdownNow()接口时，线程池由(RUNNING or SHUTDOWN ) -> STOP。
+4. TIDYING:当线程池在SHUTDOWN状态下，阻塞队列为空并且线程池中执行的任务也为空时，就会由 SHUTDOWN -> TIDYING。
+           当线程池在STOP状态下，线程池中执行的任务为空时，就会由STOP -> TIDYING。
+5. TERMINATED:线程池处在TIDYING状态时，执行完terminated()之后，就会由 TIDYING -> TERMINATED。
+
+
+## 拒绝策略
+### 执行拒绝策略的情景
+当任务添加到线程池中之所以被拒绝，可能是由于：
+1. 线程池异常关闭。
+2. 任务数量超过线程池的最大限制。
+
+### ThreadPoolExecutor自带的四种拒绝策略
+1. AbortPolicy:当任务添加到线程池中被拒绝时，它将抛出 RejectedExecutionException 异常。
+2. CallerRunsPolicy: 当任务添加到线程池中被拒绝时，会在线程池当前正在运行的Thread线程池中处理被拒绝的任务。
+3. DiscardOldestPolicy:当任务添加到线程池中被拒绝时，线程池会放弃等待队列中最旧的未处理任务，然后将被拒绝的任务添加到等待队列中。
+4. DiscardPolicy:当任务添加到线程池中被拒绝时，线程池将丢弃被拒绝的任务。
+
 
 
 ## 部分函数区别说明
@@ -67,6 +97,36 @@
     execute(ftask); 
     return ftask;
 ```
+
+
+## 相关ms小问题
+1. 当一个线程池的，corePoolSize为5，maximumPoolSize为10,依次提交6个耗时较长的任务,此时会有多少个线程，线程池是如何执行的？
+   + 前面5ge任务提交，均会生成一个core线程执行任务
+   + 当低6个任务进入的时候，假如此时设置了BlockingQueue ，则会吧任务丢进BlockingQueue里面
+   + 即还是5个core线程在执行任务
+2. 如何设计计算线程池的参数？
+```
+tasks ：每秒的任务数，假设为500~1000
+taskcost：每个任务花费时间，假设为0.1s
+responsetime：系统允许容忍的最大响应时间，假设为1s
+---
+1. corePoolSize = 每秒需要多少个线程处理？ 
+  threadcount = tasks/(1/taskcost) =tasks*taskcout =  (500~1000)*0.1 = 50~100 个线程。corePoolSize设置应该大于50
+  根据8020原则，如果80%的每秒任务数小于800，那么corePoolSize设置为80即可。
+2. queueCapacity = (coreSizePool/taskcost)*responsetime
+ 计算可得 queueCapacity = 80/0.1*1 = 80。意思是队列里的线程可以等待1s，超过了的需要新开线程来执行
+ 切记不能设置为Integer.MAX_VALUE，这样队列会很大，线程数只会保持在corePoolSize大小，当任务陡增时，不能新开线程来执行，响应时间会随之陡增。
+3. maxPoolSize = (max(tasks)- queueCapacity)/(1/taskcost)（最大任务数-队列容量）/每个线程每秒处理能力 = 最大线程数
+   算可得 maxPoolSize = (1000-80)/10 = 92
+4. rejectedExecutionHandler：根据具体情况来决定，任务不重要可丢弃，任务重要则要利用一些缓冲机制来处理
+5. keepAliveTime和allowCoreThreadTimeout：采用默认通常能满足
+ 
+```
+
+
+
+
+
 
 
 # Executors相关小结

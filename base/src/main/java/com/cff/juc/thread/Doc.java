@@ -1,8 +1,6 @@
 package com.cff.juc.thread;
 
 
-import java.util.concurrent.*;
-
 /**
  * @author cff
  * @version 1.0

@@ -1,4 +1,4 @@
-package com.cff.juc.thread;
+package src.main.java.juc.thread;
 
 
 /**

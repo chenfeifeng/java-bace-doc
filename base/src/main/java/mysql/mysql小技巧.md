@@ -21,3 +21,26 @@
    age=VALUES(age),sex=values(sex);
    ```
 ---
+
+
+# 延迟关联
+1. 场景： 
+   + 数据库中有几千万数据
+   + 符合条件的结果总数较多，比如有1000w
+   + 此时需要分页查询3000000，10的数据
+   + 已经使用了索引，查询效率还是较低
+2. 使用延迟关联查询
+    ```
+    -- 优化前
+    EXPLAIN
+    select t.* from user_info t order by t.GMT_CREATE limit 3000000,10;
+    
+    -- 优化后
+    EXPLAIN
+    select a.* from user_info a
+    INNER JOIN (
+    select t.id from user_info t order by t.GMT_CREATE limit 3000000,10
+    ) b on a.id = b.id;
+    ```
+3. 高性能MySQL》也提到了延迟关联如下：
+![延迟关联.png](https://s2.ax1x.com/2019/03/25/AtDebR.png)

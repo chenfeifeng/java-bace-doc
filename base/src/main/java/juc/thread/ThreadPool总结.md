@@ -29,9 +29,8 @@
 2. 当allowCoreThreadTimeOut为true时候，核心线程也会失效
 
 ### 什么时候失效
-1. 当runWokder异常或者添加woker失败的时候，会执行processWorkerExit方法
-2. 该方法会将线程Worker对象进行移除。
-3. 如果是runWokder方法正常执行完毕，会再次校验，最小线程数是多少。如果任务队列不为空，至少会存在一个线程
+1. 当runWokder异常或者添加woker失败的时候，会执行processWorkerExit方法,该方法会将线程Worker对象进行移除。
+2. 如果是runWokder方法正常执行完毕，会再次校验，最小线程数是多少。如果任务队列不为空，至少会存在一个线程
    + 线程池中有线程在处理任务，则直接返回，不做处理
    + 线程池中没有线程处理任务队列中的任务，创建一个线程处理任务队列中的任务
 
@@ -106,12 +105,12 @@ terminated()在ThreadPoolExecutor类中是空的，若用户想在线程池变�
    + 即还是5个core线程在执行任务
 2. 如何设计计算线程池的参数？
 ```
-tasks ：每秒的任务数，假设为500~1000
+tasks ：每秒的任务数，假设为500~1000个
 taskcost：每个任务花费时间，假设为0.1s
 responsetime：系统允许容忍的最大响应时间，假设为1s
 ---
 1. corePoolSize = 每秒需要多少个线程处理？ 
-  threadcount = tasks/(1/taskcost) =tasks*taskcout =  (500~1000)*0.1 = 50~100 个线程。corePoolSize设置应该大于50
+  threadcount = tasks/(1/taskcost) =tasks*taskcost =  (500~1000)*0.1 = 50~100 个线程。corePoolSize设置应该大于50
   根据8020原则，如果80%的每秒任务数小于800，那么corePoolSize设置为80即可。
 2. queueCapacity = (coreSizePool/taskcost)*responsetime
  计算可得 queueCapacity = 80/0.1*1 = 80。意思是队列里的线程可以等待1s，超过了的需要新开线程来执行

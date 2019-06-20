@@ -38,3 +38,9 @@ dubbo协议默认使用hession序列化
 # DUbbo-SPI机制
 1. com.alibaba.dubbo.common.extension.ExtensionLoader，拓展加载器。这是 Dubbo SPI 的核心。
 2.  
+
+
+1. 获得扩展配置
+2. 获得扩展加载器
+3. 获得自适应的拓展对象
+4. @Activate 用于配置扩展被自动激活加载条件。比如，Filter 扩展，有多个实现，使用 @Activate 的扩展可以根据条件被自动加载。

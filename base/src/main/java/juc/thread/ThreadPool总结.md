@@ -121,18 +121,61 @@ responsetime：系统允许容忍的最大响应时间，假设为1s
 5. keepAliveTime和allowCoreThreadTimeout：采用默认通常能满足
  
 ```
+4. 参数计算公式
+    + tasks ：每秒的任务数;taskcost：每个任务花费时间;responsetime：系统允许容忍的最大响应时间,队列等待时间
+    + 核心线程数量=任务数量/每秒处理任务数量->再根据8020原则，设置80%。(threadcount = tasks/(1/taskcost))
+    + 队列大小=(核心线程数量/每个任务花费时间)*队列等待时间(queueCapacity = (coreSizePool/taskcost)*responsetime)
+    + 最大线程数量=(最大任务数量-队列大小)/(每秒处理任务数量)(maxPoolSize = (max(tasks)- queueCapacity)/(1/taskcost))
+
+5. 线程池大小设置
+    + 如果是CPU密集型应用，则线程池大小设置为N+1
+    + 如果是IO密集型应用，则线程池大小设置为2N+1
+
+6. 线程池 coreSize 2  maxSize 4 ，此处不考虑队列，创建 满了a b c d4个线程，且所有任务线程同时处理完毕，  问最后回收哪两个线程？
+    + 回收线程不确定，但是最终只留下 coreSize 个线程
+    + https://mp.weixin.qq.com/s?__biz=MzU1OTgyMDc3Mg==&mid=2247483834&idx=1&sn=db7cec29acba533cce79ec476b224a82
+    + 线程池在 Worker -> runWorker -> getTask() 流程的 getTask() 过程中去回收空闲线程
 
 
 
 
 
 
+# Executors四种线程池
+1. Executors.newCachedThreadPool()
+    + 创建一个可缓存线程池，如果线程池长度超过处理需要，可灵活回收空闲线程，若无可回收，则新建线程。
+> new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+                         60L, TimeUnit.SECONDS,
+                         new SynchronousQueue<Runnable>());
+> 该线程池中，核心线程数为0，则每次创建线程为临时线程
+2. Executors.newFixedThreadPool(int nThreads)
+    + 创建一个定长线程池，可控制线程最大并发数，超出的线程会在队列中等待。
+> new ThreadPoolExecutor(nThreads, nThreads,
+                                        0L, TimeUnit.MILLISECONDS,
+                                        new LinkedBlockingQueue<Runnable>());
+3. Executors.newScheduledThreadPool()
+    + 创建一个定长线程池，支持定时及周期性任务执行。
+4. Executors.newSingleThreadExecutor()
+    + 创建一个单线程化的线程池，它只会用唯一的工作线程来执行任务，保证所有任务按照指定顺序(FIFO, LIFO, 优先级)执行。
+> new ThreadPoolExecutor(1, 1,0L, TimeUnit.MILLISECONDS,new LinkedBlockingQueue<Runnable>())
 
-# Executors相关小结
 
 
+# Runnable、Callable、Future、FutureTask
+## RUnnable
+1. 其中Runnable应该是我们最熟悉的接口，它只有一个run()函数，用于将耗时操作写在其中，该函数没有返回值。
+2. 然后使用某个线程去执行该runnable即可实现多线程，Thread类在调用start()函数后就是执行的是Runnable的run()函数。
 
+## Callable
+1. Callable与Runnable的功能大致相似，Callable中有一个call()函数，但是call()函数有返回值，而Runnable的run()函数不能将结果返回给客户程序。
 
+## Future
+1. Executor就是Runnable和Callable的调度容器，Future就是对于具体的Runnable或者Callable任务的执行结果进行取消、查询是否完成、获取结果、设置结果操作。get方法会阻塞，直到任务返回结果(Future简介)。
+
+## FutureTask
+1. FutureTask则是一个RunnableFuture<V>，而RunnableFuture实现了Runnbale又实现了Futrue<V>这两个接口，
+2. 由于FutureTask实现了Runnable，因此它既可以通过Thread包装来直接执行，也可以提交给ExecuteService来执行。并且还可以直接通过get()函数获取执行结果，该函数会阻塞，直到结果返回
+3. 因此FutureTask既是Future、Runnable，又是包装了Callable( 如果是Runnable最终也会被转换为Callable )， 它是这两者的合体。
 
 
 # 参考资料

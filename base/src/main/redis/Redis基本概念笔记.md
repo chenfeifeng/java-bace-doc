@@ -237,3 +237,144 @@ redis 内部使用文件事件处理器 file event handler，这个文件事件�
 3. 文件事件分派器
 4. 事件处理器（连接应答处理器、命令请求处理器、命令回复处理器）
 
+
+---
+# Redis部分面试题
+## redis-和memcache区别
+1. memcache全部存储内存，redis可以持久化
+2. 数据类型支持
+    + memcache只支持字符串
+    + redis支持更多
+3. value
+    + memcache最大1m
+    + redis最大1g
+
+## redis对比memcache优势
+1. redis的结构类型比memcache丰富
+2. redis的速度比memcached快
+3. redis可以持久化
+
+## redis性能问题
+1. Master不做rdb内存快照和aof持久化操作，选择slave进行存储
+2. Master写内存快照，save命令调度rdbSave函数，会阻塞主线程的工作，当快照比较大时对性能影响是非常大的，会间断性暂停服务，所以Master最好不要写内存快照。
+3. Master AOF持久化，如果不重写AOF文件，这个持久化方式对性能的影响是最小的，但是AOF文件会不断增大，AOF文件过大会影响Master重启的恢复速度。Master最好不要做任何持久化工作，包括内存快照和AOF日志文件，特别是不要启用内存快照做持久化,如果数据比较关键，某个Slave开启AOF备份数据，策略为每秒同步一次。
+4. slave每个1s同步数据到aof
+5. 主从结构最好是链表形似，Master <- Slave1 <- Slave2 <- Slave3...这样的结构方便解决单点故障问题，实现Slave对Master的替换。如果Master挂了，可以立刻启用Slave1做Master，其他不变。
+
+
+
+## MySQL里有2000w数据，redis中只存20w的数据，如何保证redis中的数据都是热点数据
+1. 相关知识：redis 内存数据集大小上升到一定大小的时候，就会施行数据淘汰策略。redis 提供 6种数据淘汰策略
+2. 可以使用 voltile-lru 策略
+
+
+## Redis使用场景
+1. 会话缓存（Session Cache）
+    + 最常用的一种使用Redis的情景是会话缓存（session cache）。用Redis缓存会话比其他存储（如Memcached）的优势在于：Redis提供持久化。当维护一个不是严格要求一致性的缓存时，如果用户的购物车信息全部丢失，大部分人都会不高兴的，现在，他们还会这样吗？
+    + 幸运的是，随着 Redis 这些年的改进，很容易找到怎么恰当的使用Redis来缓存会话的文档。甚至广为人知的商业平台Magento也提供Redis的插件。
+2. 全页缓存（FPC）
+    + 除基本的会话token之外，Redis还提供很简便的FPC平台。回到一致性问题，即使重启了Redis实例，因为有磁盘的持久化，用户也不会看到页面加载速度的下降，这是一个极大改进，类似PHP本地FPC。
+3. 队列
+    + Reids在内存存储引擎领域的一大优点是提供 list 和 set 操作，这使得Redis能作为一个很好的消息队列平台来使用。Redis作为队列使用的操作，就类似于本地程序语言（如Python）对 list 的 push/pop 操作。
+4. 排行榜/计数器
+    + Redis在内存中对数字进行递增或递减的操作实现的非常好。集合（Set）和有序集合（Sorted Set）也使得我们在执行这些操作的时候变的非常简单，Redis只是正好提供了这两种数据结构。
+    + 所以，我们要从排序集合中获取到排名最靠前的10个用户–我们称之为“user_scores”，我们只需要像下面一样执行即可：
+        + 当然，这是假定你是根据你用户的分数做递增的排序。如果你想返回用户及用户的分数，你需要这样执行：
+        + ZRANGE user_scores 0 10 WITHSCORES
+5. 发布/订阅
+    + 发布/订阅的使用场景确实非常多。我已看见人们在社交网络连接中使用，还可作为基于发布/订阅的脚本触发器，甚至用Redis的发布/订阅功能来建立聊天系统！（不，这是真的，你可以去核实）。
+    
+    
+## Redis 不同类型使用场景
+### Pub/Sub
+1. Redis的Pub/Sub系统可以构建实时的消息系统
+ 
+### Sorted Sets
+1. 和Sets相比，Sorted Sets增加了一个权重参数score，使得集合中的元素能够按score进行有序排列，比如一个存储全班同学成绩的Sorted Sets，其集合value可以是同学的学号，而score就可以是其考试得分，这样在数据插入集合的时候，就已经进行了天然的排序。可以用Sorted Sets来做带权重的队列，比如普通消息的score为1，重要消息的score为2，然后工作线程可以选择按score的倒序来获取工作任务。让重要的任务优先执行。
+2. 排行榜应用，取TOP N操作
+```
+//将登录次数和用户统一存储在一个sorted set里,ZADD key score member
+zadd login:login_times 5 1
+zadd login:login_times 1 2
+zadd login:login_times 2 3
+
+//当用户登录时，对该用户的登录次数自增1
+ret = r.zincrby("login:login_times", 1, uid)
+
+//那么如何获得登录次数最多的用户呢，逆序排列取得排名前N的用户,ZREVRANGE key start stop [WITHSCORES]
+ret = r.zrevrange("login:login_times", 0, N-1)
+```
+3. 游戏排行榜
+```
+// 添加分数
+ZADD leaderboard <score> <username>
+// 得到前100名高分用户很简单
+ZREVRANGE leaderboard 0 99
+// 用户的全球排名也相似，只需要
+ZRANK leaderboard <username>
+
+ZRANK key member
+```
+
+4. 范围查找
+    + 有一个IP范围对应地址的列表，现在需要给出一个IP的情况下，迅速的查找到这个IP在哪个范围，也就是要判断此IP的所有地。
+
+```
+// 有下面两个范围，10－20和30－40
+// A_start 10, A_end 20,B_start 30, B_end 40
+
+// 添加
+redis 127.0.0.1:6379> zadd ranges 10 A_start
+redis 127.0.0.1:6379> zadd ranges 20 A_end
+redis 127.0.0.1:6379> zadd ranges 30 B_start
+redis 127.0.0.1:6379> zadd ranges 40 B_end
+
+现在我需要查找15这个值在哪一个范围中，只需要进行如下的zrangbyscore查找：
+redis 127.0.0.1:6379> zrangebyscore ranges (15 +inf LIMIT 0 1
+1) "A_end"
+
+//这个命令的意思是在Sorted Sets中查找大于15的第一个值。（+inf在Redis中表示正无穷大，15前面的括号表示>15而非>=15）
+//查找的结果是A_end，由于所有值是按顺序排列的，所以可以判定15是在A_start到A_end区间上，也就是说15是在A这个范围里。至此大功告成。
+//当然，如果你查找到的是一个start，比如咱们用25，执行下面的命令
+redis 127.0.0.1:6379> zrangebyscore ranges (25 +inf LIMIT 0 1
+1) "B_start"
+返回结果表明其下一个节点是一个start节点，也就是说25这个值不处在任何start和end之间，不属于任何范围。
+```
+
+## Sets
+1. Sets 就是一个集合，集合的概念就是一堆不重复值的组合。利用Redis提供的Sets数据结构，可以存储一些集合性的数据。
+2. 交集，并集，差集：(Set)
+```
+//tag表使用集合来存储数据，因为集合擅长求交集、并集
+sadd tag:ruby 1
+sadd tag:ruby 2
+sadd tag:web 2
+sadd tag:erlang 3
+
+//即属于ruby又属于web的书？
+inter_list = redis.sinter("tag.web", "tag:ruby")
+
+//即属于ruby，但不属于web的书？
+inter_list = redis.sdiff("tag.ruby", "tag:web")
+
+//属于ruby和属于web的书的合集？
+ inter_list = redis.sunion("tag.ruby", "tag:web")
+
+```
+
+## Lists
+1. Lists 就是链表，略有数据结构知识的人都应该能理解其结构。使用Lists结构，我们可以轻松地实现最新消息排行等功能。Lists的另一个应用就是消息队列，可以利用Lists的PUSH操作，将任务存在Lists中，然后工作线程再用POP操作将任务取出进行执行。Redis还提供了操作Lists中某一段的api，你可以直接查询，删除Lists中某一段的元素。
+2. 消息队列系统
+    + 使用list可以构建队列系统，使用sorted set甚至可以构建有优先级的队列系统。
+    + 比如：将Redis用作日志收集器
+    + 实际上还是一个队列，多个端点将日志信息写入Redis，然后一个worker统一将所有日志写到磁盘。
+3. 取最新N个数据的操作
+```
+//记录前N个最新登陆的用户Id列表，超出的范围可以从数据库中获得。
+//把当前登录人添加到链表里
+ret = r.lpush("login:last_login_times", uid)
+//保持链表只有N位
+ret = redis.ltrim("login:last_login_times", 0, N-1)
+//获得前N个最新登陆的用户Id列表
+last_login_list = r.lrange("login:last_login_times", 0, N-1)
+```

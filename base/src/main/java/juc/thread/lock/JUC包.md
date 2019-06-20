@@ -1,10 +1,11 @@
 # JUC包常用类使用说明
 ## Condition
-1. 在没有 Lock 之前，我们使用 synchronized 来控制同步，配合 Object 的 #wait()、#notify() 等一系列方法可以实现等待 / 通知模式。在 Java SE 5 后，Java 提供了 Lock 接口，相对于 synchronized 而言，Lock 提供了条件 Condition ，对线程的等待、唤醒操作更加详细和灵活。下图是 Condition 与 Object 的监视器方法的对比（摘自《Java并发编程的艺术》）
+1. 在没有 Lock 之前，我们使用 synchronized 来控制同步，配合 Object 的 #wait()、#notify() 等一系列方法可以实现等待 / 通知模式。  
+   在 Java SE 5 后，Java 提供了 Lock 接口，相对于 synchronized 而言，Lock 提供了条件 Condition ，对线程的等待、唤醒操作更加详细和灵活。下图是 Condition 与 Object 的监视器方法的对比（摘自《Java并发编程的艺术》）
 2. ![图片](http://static2.iocoder.cn/e7e7bb0837bbe68a4364366d4ec9c5db)
 3. 为线程提供了一种更为灵活的等待 / 通知模式，线程在调用 await 方法后执行挂起操作，直到线程等待的某个条件为真时才会被唤醒。
 4. Condition 必须要配合 Lock 一起使用，因为对共享状态变量的访问发生在多线程环境下。
- 5. 一个 Condition 的实例必须与一个 Lock 绑定，因此 Condition 一般都是作为 Lock 的内部实现。
+5. 一个 Condition 的实例必须与一个 Lock 绑定，因此 Condition 一般都是作为 Lock 的内部实现。
 
 
 ## CountDownLatch

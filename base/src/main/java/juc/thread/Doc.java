@@ -117,7 +117,7 @@ public class Doc {
          * 最终run又将任务执行代理给ThreadPoolExecutor的runWorker方法。
          */
         /**
-         * Worder一方面实现了Runnable，另一方面又继承了AQS。
+         * Worker一方面实现了Runnable，另一方面又继承了AQS。
          * 通过实现AQS，Worker具有了排它锁的语义，每次在执行提交任务时都会先lock操作，执行完任务后再做unlock操作。
          * 正是这个加锁与解锁的操作，保证了同一个线程要执行完当前任务才有机再去执行另一个任务。
          */

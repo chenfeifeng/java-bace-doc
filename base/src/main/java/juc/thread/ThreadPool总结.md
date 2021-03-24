@@ -155,6 +155,8 @@ responsetime：系统允许容忍的最大响应时间，假设为1s
                                         new LinkedBlockingQueue<Runnable>());
 3. Executors.newScheduledThreadPool()
     + 创建一个定长线程池，支持定时及周期性任务执行。
+> new ThreadPoolExecutor(corePoolSize, Integer.MAX_VALUE, 0, NANOSECONDS,
+                  new DelayedWorkQueue())
 4. Executors.newSingleThreadExecutor()
     + 创建一个单线程化的线程池，它只会用唯一的工作线程来执行任务，保证所有任务按照指定顺序(FIFO, LIFO, 优先级)执行。
 > new ThreadPoolExecutor(1, 1,0L, TimeUnit.MILLISECONDS,new LinkedBlockingQueue<Runnable>())
